@@ -294,7 +294,7 @@ html[data-theme="dark"] .copy-btn svg{color:#fff}
 <main id="content">
   <!-- HERO -->
   <section class="section hero" data-od-id="hero">
-    <video class="hero-bg" src="hero-bg-loop.mp4" poster="hero-poster.jpg" muted autoplay loop playsinline preload="auto" disablepictureinpicture aria-hidden="true" tabindex="-1"></video>
+    <video class="hero-bg" src="hero-bg-loop.mp4" poster="hero-poster.jpg" muted autoplay playsinline preload="auto" disablepictureinpicture aria-hidden="true" tabindex="-1"></video>
     <div class="hero-veil" aria-hidden="true"></div>
     <div class="container hero-split">
       <div>
@@ -535,12 +535,35 @@ html[data-theme="dark"] .copy-btn svg{color:#fff}
   if (heroBg && (heroReduced || heroMq.matches)) { try { heroBg.removeAttribute('src'); heroBg.load(); } catch(e){} }
   if (heroBg && heroReduced) { try { heroBg.pause(); } catch(e){} heroBg.style.display = 'none'; }
   if (heroBg) { try { heroBg.playbackRate = 1.25; } catch(e){} }
+  // Ping-pong hero loop: forward, then smooth reverse, then forward — no visible cut
+  var heroGoingBack = false, heroRevRaf = 0;
+  function heroPlayFwd(){ if (!heroBg) return; heroGoingBack = false; try { cancelAnimationFrame(heroRevRaf); } catch(e){} try { heroBg.playbackRate = 1.25; var pf = heroBg.play(); if (pf && pf.catch) pf.catch(function(){}); } catch(e){} }
+  function heroPlayRev(){
+    if (!heroBg || !heroBg.duration || !isFinite(heroBg.duration)) { heroPlayFwd(); return; }
+    heroGoingBack = true;
+    try { heroBg.pause(); } catch(e){}
+    try { cancelAnimationFrame(heroRevRaf); } catch(e){}
+    var last = performance.now(), rate = 1.25;
+    function step(now){
+      if (!heroGoingBack || !heroBg) return;
+      var dt = Math.min(50, now - last) / 1000; last = now;
+      try {
+        var t = heroBg.currentTime - dt * rate;
+        if (t <= 0.04) { heroPlayFwd(); return; }
+        heroBg.currentTime = t;
+      } catch(e){ heroPlayFwd(); return; }
+      heroRevRaf = requestAnimationFrame(step);
+    }
+    heroRevRaf = requestAnimationFrame(step);
+  }
+  if (heroBg) { try { heroBg.loop = false; heroBg.removeAttribute('loop'); } catch(e){} heroBg.addEventListener('ended', function(){ heroPlayRev(); }); }
   if (heroBg) {
     var heroMqApply = function(){
       if (!heroMq.matches && !heroBg.getAttribute('src')) {
         var darkNow = document.documentElement.getAttribute('data-theme') === 'dark';
         heroBg.setAttribute('src', darkNow ? 'hero-bg-dark.mp4' : 'hero-bg-loop.mp4');
-        try { heroBg.load(); var pr0 = heroBg.play(); if (pr0 && pr0.catch) pr0.catch(function(){}); } catch(e){}
+        try { heroBg.load(); } catch(e){}
+        heroPlayFwd();
       }
     };
     try { if (heroMq.addEventListener) heroMq.addEventListener('change', heroMqApply); else if (heroMq.addListener) heroMq.addListener(heroMqApply); } catch(e){}
@@ -738,9 +761,9 @@ html[data-theme="dark"] .copy-btn svg{color:#fff}
       if (heroBgEl.getAttribute('poster') !== s.poster) heroBgEl.setAttribute('poster', s.poster);
       if (!skipSrc && heroBgEl.getAttribute('src') !== s.src) {
         try { heroBgEl.pause(); } catch(e){}
-        heroBgEl.setAttribute('poster', s.poster);
         heroBgEl.setAttribute('src', s.src);
-        try { var pr = heroBgEl.play(); if (pr && pr.catch) pr.catch(function(){}); } catch(e){}
+        try { heroBgEl.load(); } catch(e){}
+        heroPlayFwd();
       }
     }
   }
