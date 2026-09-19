@@ -556,7 +556,7 @@ html[data-theme="dark"] .copy-btn svg{color:#fff}
     }
     heroRevRaf = requestAnimationFrame(step);
   }
-  if (heroBg) { try { heroBg.loop = false; heroBg.removeAttribute('loop'); } catch(e){} heroBg.addEventListener('ended', function(){ heroPlayRev(); }); }
+  if (heroBg) { try { heroBg.loop = false; heroBg.removeAttribute('loop'); } catch(e){} heroBg.addEventListener('ended', function(){ heroPlayRev(); }); heroBg.addEventListener('timeupdate', function(){ try { if (!heroGoingBack && !heroBg.paused && heroBg.duration && isFinite(heroBg.duration) && heroBg.currentTime >= heroBg.duration - 0.45) heroPlayRev(); } catch(e){} }); }
   if (heroBg) {
     var heroMqApply = function(){
       if (!heroMq.matches && !heroBg.getAttribute('src')) {
