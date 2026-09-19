@@ -98,8 +98,7 @@ h1,h2,h3,h4{text-wrap:balance}
 /* hero */
 .hero{position:relative;overflow:hidden;min-height:620px;padding-block:clamp(72px,9vw,128px);background:var(--bg)}
 .hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 18%;opacity:0;filter:saturate(1.08) contrast(1.06);z-index:0;background:#E8E6E1;animation:bgIn 1.4s cubic-bezier(.22,1,.36,1) .9s forwards}
-.hero-rev{display:none;animation:none;opacity:.65}
-html[data-theme="dark"] .hero-rev{opacity:.7}
+.hero-rev{animation:none;opacity:0}
 .hero-veil{position:absolute;inset:0;z-index:0;background:linear-gradient(180deg, #FAFAF8CC 0%, #FAFAF859 45%, #FAFAF833 100%)}
 .hero .hero-split{position:relative;z-index:1}
 @media (max-width:640px){.hero-bg{display:none}}
@@ -542,12 +541,11 @@ html[data-theme="dark"] .copy-btn svg{color:#fff}
   var heroMq = window.matchMedia('(max-width: 640px)');
   var heroDir = 'fwd';
   function heroPlay(el){ if (!el) return; try { el.playbackRate = 1.25; var p = el.play(); if (p && p.catch) p.catch(function(){}); } catch(e){} }
-  // crossfade swap: incoming fades in while outgoing fades out (~0.38s), no hard cut.
-  // The hidden element is re-seeked only AFTER it disappears — never while visible.
+  // crossfade swap: both elements stay rendered so frames are always ready;
+  // incoming fades in while outgoing fades out (~0.38s), then outgoing pauses.
   function heroShow(el, hideEl, afterHide){
     var target = document.documentElement.getAttribute('data-theme') === 'dark' ? '0.7' : '0.65';
     if (el) {
-      el.style.display = 'block';
       el.style.transition = 'none';
       el.style.opacity = '0';
       void el.offsetWidth;
@@ -559,7 +557,7 @@ html[data-theme="dark"] .copy-btn svg{color:#fff}
     if (hideEl) {
       hideEl.style.transition = 'opacity .38s ease-out';
       hideEl.style.opacity = '0';
-      setTimeout(function(){ try { hideEl.pause(); } catch(e){} hideEl.style.display = 'none'; hideEl.style.transition = ''; if (afterHide) { try { afterHide(); } catch(e){} } }, 400);
+      setTimeout(function(){ try { hideEl.pause(); } catch(e){} hideEl.style.transition = ''; if (afterHide) { try { afterHide(); } catch(e){} } }, 400);
     } else if (afterHide) { try { afterHide(); } catch(e){} }
   }
   function heroToRev(){
@@ -598,7 +596,8 @@ html[data-theme="dark"] .copy-btn svg{color:#fff}
         if (heroRev) { heroRev.setAttribute('src', darkNow ? 'hero-bg-dark-rev.mp4' : 'hero-bg-loop-rev.mp4'); try { heroRev.load(); } catch(e){} }
         try { heroFwd.load(); } catch(e){}
         heroDir = 'fwd';
-        if (heroRev) heroRev.style.display = 'none';
+        heroFwd.style.display = 'block';
+        if (heroRev) { heroRev.style.display = 'block'; heroRev.style.transition = ''; heroRev.style.opacity = '0'; }
         heroShow(heroFwd, null);
       }
     };
@@ -801,7 +800,7 @@ html[data-theme="dark"] .copy-btn svg{color:#fff}
         if (heroRev && heroRev.getAttribute('src') !== rs) { heroRev.setAttribute('src', rs); try { heroRev.load(); } catch(e){} }
         if (heroBgEl.getAttribute('src') !== s.src) { try { heroBgEl.pause(); } catch(e){} heroBgEl.setAttribute('src', s.src); try { heroBgEl.load(); } catch(e){} }
         heroDir = 'fwd';
-        if (heroRev) heroRev.style.display = 'none';
+        if (heroRev) { heroRev.style.transition = ''; heroRev.style.opacity = '0'; }
         heroShow(heroBgEl, null);
         try { if (heroRev) heroRev.currentTime = 0; } catch(e){}
       }
