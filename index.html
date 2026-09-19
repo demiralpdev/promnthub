@@ -537,10 +537,24 @@ html[data-theme="dark"] .copy-btn svg{color:#fff}
   var heroMq = window.matchMedia('(max-width: 640px)');
   var heroDir = 'fwd';
   function heroPlay(el){ if (!el) return; try { el.playbackRate = 1.25; var p = el.play(); if (p && p.catch) p.catch(function(){}); } catch(e){} }
+  // crossfade swap: incoming fades in while outgoing fades out (~0.38s), no hard cut
   function heroShow(el, hideEl){
-    if (el) el.style.display = 'block';
+    var target = document.documentElement.getAttribute('data-theme') === 'dark' ? '0.7' : '0.65';
+    if (el) {
+      el.style.display = 'block';
+      el.style.transition = 'none';
+      el.style.opacity = '0';
+      void el.offsetWidth;
+      el.style.transition = 'opacity .38s ease-out';
+      el.style.opacity = target;
+      setTimeout(function(){ el.style.transition = ''; }, 450);
+    }
     heroPlay(el);
-    if (hideEl) { try { hideEl.pause(); } catch(e){} hideEl.style.display = 'none'; }
+    if (hideEl) {
+      hideEl.style.transition = 'opacity .38s ease-out';
+      hideEl.style.opacity = '0';
+      setTimeout(function(){ try { hideEl.pause(); } catch(e){} hideEl.style.display = 'none'; hideEl.style.transition = ''; }, 400);
+    }
   }
   function heroToRev(){
     if (heroDir !== 'fwd' || !heroFwd || !heroRev) return;
