@@ -98,6 +98,8 @@ h1,h2,h3,h4{text-wrap:balance}
 /* hero */
 .hero{position:relative;overflow:hidden;min-height:620px;padding-block:clamp(72px,9vw,128px);background:var(--bg)}
 .hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 18%;opacity:0;filter:saturate(1.08) contrast(1.06);z-index:0;background:#E8E6E1;animation:bgIn 1.4s cubic-bezier(.22,1,.36,1) .9s forwards}
+.hero-rev{display:none;animation:none;opacity:.65}
+html[data-theme="dark"] .hero-rev{opacity:.7}
 .hero-veil{position:absolute;inset:0;z-index:0;background:linear-gradient(180deg, #FAFAF8CC 0%, #FAFAF859 45%, #FAFAF833 100%)}
 .hero .hero-split{position:relative;z-index:1}
 @media (max-width:640px){.hero-bg{display:none}}
@@ -295,6 +297,7 @@ html[data-theme="dark"] .copy-btn svg{color:#fff}
   <!-- HERO -->
   <section class="section hero" data-od-id="hero">
     <video class="hero-bg" src="hero-bg-loop.mp4" poster="hero-poster.jpg" muted autoplay playsinline preload="auto" disablepictureinpicture aria-hidden="true" tabindex="-1"></video>
+    <video class="hero-bg hero-rev" src="hero-bg-loop-rev.mp4" muted playsinline preload="auto" disablepictureinpicture aria-hidden="true" tabindex="-1"></video>
     <div class="hero-veil" aria-hidden="true"></div>
     <div class="container hero-split">
       <div>
@@ -526,44 +529,55 @@ html[data-theme="dark"] .copy-btn svg{color:#fff}
 <script>
 (function(){
   document.getElementById('year').textContent = new Date().getFullYear();
-  // Reduced motion: freeze the decorative hero loop, keep the solid ground
-  var heroBg = document.querySelector('.hero-bg');
+  // Hero ping-pong via two elements: forward file plays 0→end, pre-rendered
+  // reversed file plays end→0. Swap exactly on end — both decode forward natively.
+  var heroFwd = document.querySelector('.hero-bg:not(.hero-rev)');
+  var heroRev = document.querySelector('.hero-bg.hero-rev');
   var heroReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var heroMq = window.matchMedia('(max-width: 640px)');
-  // Small screens hide the hero video via CSS and reduced-motion hides it too —
-  // drop its source early so low-bandwidth devices never download it (poster/bg stays identical)
-  if (heroBg && (heroReduced || heroMq.matches)) { try { heroBg.removeAttribute('src'); heroBg.load(); } catch(e){} }
-  if (heroBg && heroReduced) { try { heroBg.pause(); } catch(e){} heroBg.style.display = 'none'; }
-  if (heroBg) { try { heroBg.playbackRate = 1.25; } catch(e){} }
-  // Ping-pong hero loop: forward, then smooth reverse, then forward — no visible cut
-  var heroGoingBack = false, heroRevRaf = 0;
-  function heroPlayFwd(){ if (!heroBg) return; heroGoingBack = false; try { cancelAnimationFrame(heroRevRaf); } catch(e){} try { heroBg.playbackRate = 1.25; var pf = heroBg.play(); if (pf && pf.catch) pf.catch(function(){}); } catch(e){} }
-  function heroPlayRev(){
-    if (!heroBg || !heroBg.duration || !isFinite(heroBg.duration)) { heroPlayFwd(); return; }
-    heroGoingBack = true;
-    try { heroBg.pause(); } catch(e){}
-    try { cancelAnimationFrame(heroRevRaf); } catch(e){}
-    var last = performance.now(), rate = 1.25;
-    function step(now){
-      if (!heroGoingBack || !heroBg) return;
-      var dt = Math.min(50, now - last) / 1000; last = now;
-      try {
-        var t = heroBg.currentTime - dt * rate;
-        if (t <= 0.04) { heroPlayFwd(); return; }
-        heroBg.currentTime = t;
-      } catch(e){ heroPlayFwd(); return; }
-      heroRevRaf = requestAnimationFrame(step);
-    }
-    heroRevRaf = requestAnimationFrame(step);
+  var heroDir = 'fwd';
+  function heroPlay(el){ if (!el) return; try { el.playbackRate = 1.25; var p = el.play(); if (p && p.catch) p.catch(function(){}); } catch(e){} }
+  function heroShow(el, hideEl){
+    if (el) el.style.display = 'block';
+    heroPlay(el);
+    if (hideEl) { try { hideEl.pause(); } catch(e){} hideEl.style.display = 'none'; }
   }
-  if (heroBg) { try { heroBg.loop = false; heroBg.removeAttribute('loop'); } catch(e){} heroBg.addEventListener('ended', function(){ heroPlayRev(); }); heroBg.addEventListener('timeupdate', function(){ try { if (!heroGoingBack && !heroBg.paused && heroBg.duration && isFinite(heroBg.duration) && heroBg.currentTime >= heroBg.duration - 0.45) heroPlayRev(); } catch(e){} }); }
-  if (heroBg) {
+  function heroToRev(){
+    if (heroDir !== 'fwd' || !heroFwd || !heroRev) return;
+    heroDir = 'rev'; heroShow(heroRev, heroFwd);
+    try { heroFwd.currentTime = 0; } catch(e){}
+  }
+  function heroToFwd(){
+    if (heroDir !== 'rev' || !heroFwd || !heroRev) return;
+    heroDir = 'fwd'; heroShow(heroFwd, heroRev);
+    try { heroRev.currentTime = 0; } catch(e){}
+  }
+  function heroKillSrc(){
+    [heroFwd, heroRev].forEach(function(el){ if (!el) return; try { el.removeAttribute('src'); el.load(); } catch(e){} el.style.display = 'none'; });
+  }
+  function heroSwapInit(){
+    if (!heroFwd || !heroRev) return;
+    heroFwd.addEventListener('ended', heroToRev);
+    heroRev.addEventListener('ended', heroToFwd);
+  }
+  // Small screens hide hero video via CSS and reduced-motion hides it too —
+  // drop sources early so low-bandwidth devices never download them
+  if (!heroFwd || !heroRev || heroReduced || heroMq.matches) {
+    heroKillSrc();
+  } else {
+    heroSwapInit();
+  }
+  if (heroFwd && !heroReduced && !heroMq.matches) {
     var heroMqApply = function(){
-      if (!heroMq.matches && !heroBg.getAttribute('src')) {
+      if (heroReduced) return;
+      if (!heroMq.matches && !heroFwd.getAttribute('src')) {
         var darkNow = document.documentElement.getAttribute('data-theme') === 'dark';
-        heroBg.setAttribute('src', darkNow ? 'hero-bg-dark.mp4' : 'hero-bg-loop.mp4');
-        try { heroBg.load(); } catch(e){}
-        heroPlayFwd();
+        heroFwd.setAttribute('src', darkNow ? 'hero-bg-dark.mp4' : 'hero-bg-loop.mp4');
+        if (heroRev) { heroRev.setAttribute('src', darkNow ? 'hero-bg-dark-rev.mp4' : 'hero-bg-loop-rev.mp4'); try { heroRev.load(); } catch(e){} }
+        try { heroFwd.load(); } catch(e){}
+        heroDir = 'fwd';
+        if (heroRev) heroRev.style.display = 'none';
+        heroShow(heroFwd, null);
       }
     };
     try { if (heroMq.addEventListener) heroMq.addEventListener('change', heroMqApply); else if (heroMq.addListener) heroMq.addListener(heroMqApply); } catch(e){}
@@ -757,13 +771,18 @@ html[data-theme="dark"] .copy-btn svg{color:#fff}
     }
     if (heroBgEl) {
       var s = heroSource(dark);
+      var rs = dark ? 'hero-bg-dark-rev.mp4' : 'hero-bg-loop-rev.mp4';
       var skipSrc = window.matchMedia('(max-width: 640px)').matches || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (heroBgEl.getAttribute('poster') !== s.poster) heroBgEl.setAttribute('poster', s.poster);
-      if (!skipSrc && heroBgEl.getAttribute('src') !== s.src) {
-        try { heroBgEl.pause(); } catch(e){}
-        heroBgEl.setAttribute('src', s.src);
-        try { heroBgEl.load(); } catch(e){}
-        heroPlayFwd();
+      if (skipSrc) {
+        heroKillSrc();
+      } else {
+        if (heroRev && heroRev.getAttribute('src') !== rs) { heroRev.setAttribute('src', rs); try { heroRev.load(); } catch(e){} }
+        if (heroBgEl.getAttribute('src') !== s.src) { try { heroBgEl.pause(); } catch(e){} heroBgEl.setAttribute('src', s.src); try { heroBgEl.load(); } catch(e){} }
+        heroDir = 'fwd';
+        if (heroRev) heroRev.style.display = 'none';
+        heroShow(heroBgEl, null);
+        try { if (heroRev) heroRev.currentTime = 0; } catch(e){}
       }
     }
   }
