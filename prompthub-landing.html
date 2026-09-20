@@ -151,8 +151,9 @@ h1,h2,h3,h4{text-wrap:balance}
 .prompt-row p{margin:0;color:var(--muted);font-size:15px;max-width:64ch}
 .prompt-row-foot{display:flex;align-items:center;gap:12px;margin-top:12px}
 .tag{display:inline-flex;align-items:center;padding:4px 10px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:999px;font-size:12px}
-.copy-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:var(--surface);border-radius:var(--radius);padding:10px 18px;font-size:14px;font-weight:600;min-height:44px;white-space:nowrap}
-.copy-btn:hover{border-color:var(--fg)}
+.copy-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:var(--surface);color:var(--fg);border-radius:var(--radius);padding:10px 18px;font-size:14px;font-weight:600;min-height:44px;white-space:nowrap}
+.copy-btn:hover{border-color:var(--fg);color:var(--fg)}
+.copy-btn:disabled{color:var(--fg);opacity:.65}
 .copy-btn svg{width:15px;height:15px}
 /* steps */
 .step-num{font-family:var(--font-mono);font-size:13px;letter-spacing:.08em;color:var(--accent);margin-bottom:14px}
@@ -542,7 +543,7 @@ html[data-theme="dark"] .copy-btn svg{color:#fff}
   var heroReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var heroMq = window.matchMedia('(max-width: 640px)');
   var heroDir = 'fwd';
-  function heroPlay(el){ if (!el) return; try { el.playbackRate = 1.25; var p = el.play(); if (p && p.catch) p.catch(function(){}); } catch(e){} }
+  function heroPlay(el){ if (!el) return; try { el.playbackRate = 0.75; var p = el.play(); if (p && p.catch) p.catch(function(){}); } catch(e){} }
   // swap: incoming fades in OVER the still-opaque outgoing (no black dip),
   // outgoing hides instantly only after the incoming fade lands, then pauses.
   function heroShow(el, hideEl, afterHide){
