@@ -97,9 +97,9 @@ h1,h2,h3,h4{text-wrap:balance}
 .btn-copied{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--surface)!important}
 /* hero */
 .hero{position:relative;overflow:hidden;min-height:620px;padding-block:clamp(72px,9vw,128px);background:var(--bg)}
-.hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 18%;opacity:0;filter:saturate(1.08) contrast(1.06);z-index:0;background:#E8E6E1;animation:bgIn 1.4s cubic-bezier(.22,1,.36,1) .9s forwards}
+.hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 18%;opacity:0;filter:none;z-index:0;background:#000;animation:bgIn 1.4s cubic-bezier(.22,1,.36,1) .9s forwards}
 .hero-rev{animation:none;opacity:0}
-.hero-veil{position:absolute;inset:0;z-index:0;background:linear-gradient(180deg, #FAFAF8CC 0%, #FAFAF859 45%, #FAFAF833 100%)}
+.hero-veil{position:absolute;inset:0;z-index:0;background:transparent}
 .hero .hero-split{position:relative;z-index:1}
 @media (max-width:640px){.hero-bg{display:none}}
 .hero-split{display:grid;grid-template-columns:1.05fr .95fr;gap:var(--gap-2xl);align-items:center}
@@ -107,8 +107,10 @@ h1,h2,h3,h4{text-wrap:balance}
 .badge{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:7px 14px;font-family:var(--font-mono);font-size:12px;letter-spacing:.02em;color:var(--muted);margin-bottom:24px}
 .badge-dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
 .hero h1{margin-bottom:20px}
-.hero .lead{margin-bottom:32px}
+.hero .lead{margin-bottom:32px;color:#fff;text-shadow:0 1px 12px rgba(0,0,0,.45)}
 .hero-cta{display:inline-flex;gap:var(--gap-sm);flex-wrap:wrap}
+.hero .btn-secondary{background:rgba(0,0,0,.32);color:#fff;border-color:rgba(255,255,255,.65);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.hero .btn-secondary:hover{border-color:#fff;background:rgba(0,0,0,.48)}
 /* prompt card mockup */
 .prompt-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:0 24px 60px -32px color-mix(in oklch, var(--fg) 25%, transparent);overflow:hidden}
 .prompt-card-top{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
@@ -179,7 +181,7 @@ h1,h2,h3,h4{text-wrap:balance}
   .hero-cta .btn{flex:1}
 }
 /* motion — one language: expo-out easing, transform + opacity only */
-@keyframes bgIn{from{opacity:0}to{opacity:.65}}
+@keyframes bgIn{from{opacity:0}to{opacity:1}}
 .hero .rv{transition-duration:.7s}
 .rv{opacity:0;transform:translateY(14px);transition:opacity .7s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1);transition-delay:var(--d,0ms);will-change:transform,opacity}
 .rv.in{opacity:1;transform:none}
@@ -193,7 +195,7 @@ h1,h2,h3,h4{text-wrap:balance}
 .tour-btn:hover{transform:translateY(-1px)}
 .tour-btn:active{transform:scale(.96)}
 @media (prefers-reduced-motion: reduce){
-  .hero-bg{animation:none;opacity:.65}
+  .hero-bg{animation:none;opacity:1}
   .rv{opacity:1;transform:none;filter:none;transition:none}
   .tour{display:none}
   .btn-primary:hover,.btn-secondary:hover,.copy-btn:hover,.cat-card:hover,.tour-btn:hover{transform:none}
@@ -544,7 +546,7 @@ html[data-theme="dark"] .copy-btn svg{color:#fff}
   // crossfade swap: both elements stay rendered so frames are always ready;
   // incoming fades in while outgoing fades out (~0.38s), then outgoing pauses.
   function heroShow(el, hideEl, afterHide){
-    var target = document.documentElement.getAttribute('data-theme') === 'dark' ? '0.7' : '0.65';
+      var target = document.documentElement.getAttribute('data-theme') === 'dark' ? '0.7' : '1';
     if (el) {
       el.style.transition = 'none';
       el.style.opacity = '0';
